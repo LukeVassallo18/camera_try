@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_sources/noti_service.dart';
 import './models/recipe.dart';
 import 'recipe_tile.dart';
 
 class RecipesPage extends StatefulWidget {
+  const RecipesPage({super.key});
+
   @override
   _RecipesPageState createState() => _RecipesPageState();
 }
@@ -85,11 +88,16 @@ class _RecipesPageState extends State<RecipesPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  formKey.currentState!.save();
-                  _addRecipe(recipeName, recipeDescription);
-                  Navigator.of(context).pop();
-                }
+                // if (formKey.currentState!.validate()) {
+                //   formKey.currentState!.save();
+                //   _addRecipe(recipeName, recipeDescription);
+                //   Navigator.of(context).pop();
+                // }
+                NotiService().showNotification(
+                  id: 0,
+                  title: 'Hello',
+                  body: 'This is a notification',
+                );
               },
               child: const Text('Add'),
             ),

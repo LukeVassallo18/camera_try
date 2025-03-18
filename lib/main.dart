@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'recipes_page.dart';
+import 'noti_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  NotiService().initNotification();
   runApp(const MainApp());
 }
 
