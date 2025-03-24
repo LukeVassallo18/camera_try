@@ -1,6 +1,5 @@
 import 'dart:convert'; // For JSON encoding
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http; // For HTTP requests
 import './models/recipe.dart';
 import 'recipe_tile.dart';
@@ -15,15 +14,41 @@ class RecipesPage extends StatefulWidget {
 class _RecipesPageState extends State<RecipesPage> {
   final List<Recipe> _recipes = [];
 
-  Future _pickImage(int index) async {
-    final returnedImage =
-        await ImagePicker().pickImage(source: ImageSource.camera);
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecipes(); // Fetch recipes from Firebase when the page loads
+  }
 
-    if (returnedImage == null) return;
+  // Fetch recipes from Firebase Realtime Database
+  Future<void> _fetchRecipes() async {
+    var url = Uri.https(
+        "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
+        "/recipes.json"); // Firebase Realtime Database URL
 
-    setState(() {
-      _recipes[index].imagePath = returnedImage.path;
-    });
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic>? data = json.decode(response.body);
+
+        if (data != null) {
+          setState(() {
+            _recipes.clear(); // Clear the list before adding new data
+            data.forEach((id, recipeData) {
+              _recipes.add(Recipe(
+                name: recipeData['name'],
+                description: recipeData['description'],
+              ));
+            });
+          });
+        }
+      } else {
+        print('Failed to fetch recipes: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching recipes: $error');
+    }
   }
 
   // Save recipe to Firebase Realtime Database
@@ -41,15 +66,16 @@ class _RecipesPageState extends State<RecipesPage> {
         body: json.encode({
           'name': name,
           'description': description,
-          'imagePath':
-              null, // You can update this if you want to save the image path
         }),
       );
 
       if (response.statusCode == 200) {
-        // Successfully saved to Firebase, now update the local list
+        final responseData = json.decode(response.body);
         setState(() {
-          _recipes.add(Recipe(name: name, description: description));
+          _recipes.add(Recipe(
+            name: name,
+            description: description,
+          ));
         });
       } else {
         print('Failed to save recipe: ${response.statusCode}');
@@ -152,7 +178,11 @@ class _RecipesPageState extends State<RecipesPage> {
               itemBuilder: (context, index) {
                 return RecipeTile(
                   recipe: _recipes[index],
-                  onPickImage: () => _pickImage(index),
+                  onPickImage: () {
+                    // Add your logic for picking an image here
+                    print(
+                        'Image picker triggered for recipe: ${_recipes[index].name}');
+                  },
                 );
               },
             ),
