@@ -1,5 +1,7 @@
 import 'dart:convert'; // For JSON encoding
+import 'dart:io'; // For File handling
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // For picking images
 import 'package:http/http.dart' as http; // For HTTP requests
 import './models/recipe.dart';
 import 'recipe_tile.dart';
@@ -37,8 +39,10 @@ class _RecipesPageState extends State<RecipesPage> {
             _recipes.clear(); // Clear the list before adding new data
             data.forEach((id, recipeData) {
               _recipes.add(Recipe(
+                id: id,
                 name: recipeData['name'],
                 description: recipeData['description'],
+                imagePath: recipeData['imagePath'], // Load image path
               ));
             });
           });
@@ -66,6 +70,7 @@ class _RecipesPageState extends State<RecipesPage> {
         body: json.encode({
           'name': name,
           'description': description,
+          'imagePath': null, // Initially no image
         }),
       );
 
@@ -73,8 +78,10 @@ class _RecipesPageState extends State<RecipesPage> {
         final responseData = json.decode(response.body);
         setState(() {
           _recipes.add(Recipe(
+            id: responseData['name'], // Firebase-generated unique ID
             name: name,
             description: description,
+            imagePath: null,
           ));
         });
       } else {
@@ -82,6 +89,63 @@ class _RecipesPageState extends State<RecipesPage> {
       }
     } catch (error) {
       print('Error saving recipe: $error');
+    }
+  }
+
+  // Pick an image using the camera and update the recipe's image in Firebase
+  Future<void> _pickImage(String recipeId, int index) async {
+    final pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (pickedImage == null) return;
+
+    final imagePath = pickedImage.path;
+
+    // Update the image path in Firebase
+    var url = Uri.https(
+        "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
+        "/recipes/$recipeId.json"); // Firebase Realtime Database URL
+
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'imagePath': imagePath,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _recipes[index].imagePath = imagePath; // Update local list
+        });
+        print('Image updated successfully in Firebase.');
+      } else {
+        print('Failed to update image: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error updating image: $error');
+    }
+  }
+
+  // Remove recipe from Firebase Realtime Database
+  Future<void> _removeRecipe(String id) async {
+    var url = Uri.https(
+        "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
+        "/recipes/$id.json"); // Firebase Realtime Database URL
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        print('Recipe removed successfully from Firebase.');
+      } else {
+        print('Failed to remove recipe: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error removing recipe: $error');
     }
   }
 
@@ -176,13 +240,26 @@ class _RecipesPageState extends State<RecipesPage> {
           : ListView.builder(
               itemCount: _recipes.length,
               itemBuilder: (context, index) {
-                return RecipeTile(
-                  recipe: _recipes[index],
-                  onPickImage: () {
-                    // Add your logic for picking an image here
-                    print(
-                        'Image picker triggered for recipe: ${_recipes[index].name}');
+                final recipe = _recipes[index];
+                return Dismissible(
+                  key: Key(recipe.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) {
+                    _removeRecipe(recipe.id); // Remove from Firebase
+                    setState(() {
+                      _recipes.removeAt(index); // Remove from local list
+                    });
                   },
+                  child: RecipeTile(
+                    recipe: recipe,
+                    onPickImage: () => _pickImage(recipe.id, index),
+                  ),
                 );
               },
             ),
