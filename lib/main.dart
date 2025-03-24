@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'recipes_page.dart';
-import 'noti_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  NotiService().initNotification();
   runApp(const MainApp());
 }
 
@@ -54,7 +52,7 @@ class WelcomePage extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => RecipesPage()),
+              MaterialPageRoute(builder: (context) => const RecipesPage()),
             );
           },
           child: const Text("Go to Recipes"),
