@@ -1,5 +1,7 @@
+import 'dart:convert'; // For JSON encoding
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http; // For HTTP requests
 import './models/recipe.dart';
 import 'recipe_tile.dart';
 
@@ -24,10 +26,37 @@ class _RecipesPageState extends State<RecipesPage> {
     });
   }
 
-  void _addRecipe(String name, String description) {
-    setState(() {
-      _recipes.add(Recipe(name: name, description: description));
-    });
+  // Save recipe to Firebase Realtime Database
+  Future<void> _addRecipe(String name, String description) async {
+    var url = Uri.https(
+        "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
+        "/recipes.json"); // Firebase Realtime Database URL
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'name': name,
+          'description': description,
+          'imagePath':
+              null, // You can update this if you want to save the image path
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Successfully saved to Firebase, now update the local list
+        setState(() {
+          _recipes.add(Recipe(name: name, description: description));
+        });
+      } else {
+        print('Failed to save recipe: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error saving recipe: $error');
+    }
   }
 
   void _showAddRecipeDialog() {
