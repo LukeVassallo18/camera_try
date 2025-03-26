@@ -1,10 +1,10 @@
 import 'dart:convert'; // For JSON encoding
-import 'dart:io'; // For File handling
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // For picking images
 import 'package:http/http.dart' as http; // For HTTP requests
 import './models/recipe.dart';
 import 'recipe_tile.dart';
+import 'package:permission_handler/permission_handler.dart'; // For Firebase initialization
 
 class RecipesPage extends StatefulWidget {
   const RecipesPage({super.key});
@@ -94,39 +94,49 @@ class _RecipesPageState extends State<RecipesPage> {
 
   // Pick an image using the camera and update the recipe's image in Firebase
   Future<void> _pickImage(String recipeId, int index) async {
-    final pickedImage =
-        await ImagePicker().pickImage(source: ImageSource.camera);
+    // Request camera permission
+    var status = await Permission.camera.request();
 
-    if (pickedImage == null) return;
+    if (status.isGranted) {
+      final pickedImage =
+          await ImagePicker().pickImage(source: ImageSource.camera);
 
-    final imagePath = pickedImage.path;
+      if (pickedImage == null) return;
 
-    // Update the image path in Firebase
-    var url = Uri.https(
-        "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
-        "/recipes/$recipeId.json"); // Firebase Realtime Database URL
+      final imagePath = pickedImage.path;
 
-    try {
-      final response = await http.patch(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'imagePath': imagePath,
-        }),
-      );
+      // Update the image path in Firebase
+      var url = Uri.https(
+          "recipekeeper-c9509-default-rtdb.europe-west1.firebasedatabase.app",
+          "/recipes/$recipeId.json"); // Firebase Realtime Database URL
 
-      if (response.statusCode == 200) {
-        setState(() {
-          _recipes[index].imagePath = imagePath; // Update local list
-        });
-        print('Image updated successfully in Firebase.');
-      } else {
-        print('Failed to update image: ${response.statusCode}');
+      try {
+        final response = await http.patch(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({
+            'imagePath': imagePath,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          setState(() {
+            _recipes[index].imagePath = imagePath; // Update local list
+          });
+          print('Image updated successfully in Firebase.');
+        } else {
+          print('Failed to update image: ${response.statusCode}');
+        }
+      } catch (error) {
+        print('Error updating image: $error');
       }
-    } catch (error) {
-      print('Error updating image: $error');
+    } else if (status.isDenied) {
+      print('Camera permission denied.');
+    } else if (status.isPermanentlyDenied) {
+      print(
+          'Camera permission permanently denied. Please enable it in settings.');
     }
   }
 

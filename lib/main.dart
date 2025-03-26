@@ -12,7 +12,9 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // removing the debug banner from the top right of the mobile screen
       debugShowCheckedModeBanner: false,
+      // changing themes of the app to orange an white
       theme: ThemeData(
         primarySwatch: Colors.orange,
         colorScheme:
