@@ -14,6 +14,7 @@ class RecipesPage extends StatefulWidget {
 }
 
 class _RecipesPageState extends State<RecipesPage> {
+  // create a list of recipes
   final List<Recipe> _recipes = [];
 
   @override
@@ -30,7 +31,7 @@ class _RecipesPageState extends State<RecipesPage> {
 
     try {
       final response = await http.get(url);
-
+      // wait for positive repsonse from firebase
       if (response.statusCode == 200) {
         final Map<String, dynamic>? data = json.decode(response.body);
 
@@ -132,6 +133,7 @@ class _RecipesPageState extends State<RecipesPage> {
       } catch (error) {
         print('Error updating image: $error');
       }
+      // if request is denied, show a message
     } else if (status.isDenied) {
       print('Camera permission denied.');
     } else if (status.isPermanentlyDenied) {
@@ -159,6 +161,7 @@ class _RecipesPageState extends State<RecipesPage> {
     }
   }
 
+// add recipe form
   void _showAddRecipeDialog() {
     final formKey = GlobalKey<FormState>();
     String recipeName = '';
@@ -230,6 +233,7 @@ class _RecipesPageState extends State<RecipesPage> {
     );
   }
 
+// main layout of page
   @override
   Widget build(BuildContext context) {
     return Scaffold(

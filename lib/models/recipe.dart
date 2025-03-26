@@ -1,3 +1,4 @@
+// recipe model for firebase and tile format
 class Recipe {
   String id;
   String name;
