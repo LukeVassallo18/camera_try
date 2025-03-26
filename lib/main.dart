@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       // removing the debug banner from the top right of the mobile screen
       debugShowCheckedModeBanner: false,
-      // changing themes of the app to orange an white
+      // changing themes of the app to orange and white
       theme: ThemeData(
         primarySwatch: Colors.orange,
         colorScheme:
@@ -43,6 +43,7 @@ class MainApp extends StatelessWidget {
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
+// basic layout of the home page
   @override
   Widget build(BuildContext context) {
     return Scaffold(
